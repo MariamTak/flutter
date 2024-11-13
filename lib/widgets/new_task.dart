@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:todolist_app/models/task.dart';
+import 'package:todolist_app/services/firestore.dart';
 
 class NewTask extends StatefulWidget {
   const NewTask(
@@ -24,41 +25,44 @@ class _NewTaskState extends State<NewTask> {
     _descriptionController.dispose(); // Dispose the description controller
     super.dispose();
   }
+  
+void _submitTaskData() {
+  if (_titleController.text.trim().isEmpty) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Erreur'),
+        content: const Text(
+            'Merci de saisir le titre de la tâche à ajouter dans la liste'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+            },
+            child: const Text('Okay'),
+          ),
+        ],
+      ),
+    );
+    return;
+  }
 
-  // Method to submit task data
-  void _submitTaskData() {
-    if (_titleController.text.trim().isEmpty) {
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Erreur'),
-          content: const Text(
-              'Merci de saisir le titre de la tâche à ajouter dans la liste'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-              },
-              child: const Text('Okay'),
-            ),
-          ],
-        ),
-      );
-      return;
-    }
-
+  // Call setState to refresh UI
+  setState(() {
     widget.onAddTask(Task(
       title: _titleController.text,
       description: _descriptionController.text,
       date: DateTime.now(),
       category: _selectedCategory,
-    )); //pour recupere et construire tache
+    ));
+  });
 
-    Navigator.of(context).pop(); // Close the screen after submission
-  }
+}
+
 
   @override
   Widget build(BuildContext context) {
+    
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(

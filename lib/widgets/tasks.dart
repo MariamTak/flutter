@@ -1,38 +1,55 @@
 import 'package:flutter/material.dart';
 import 'package:todolist_app/models/task.dart';
+import 'package:todolist_app/widgets/task_item.dart';
 import 'package:todolist_app/widgets/new_task.dart';
+import 'package:todolist_app/services/firestore.dart';
 import 'tasks_list.dart';
 
 class Tasks extends StatefulWidget {
   const Tasks({super.key});
 
   @override
-  State<Tasks> createState() {
-    return _TasksState();
-  }
+  State<Tasks> createState() => _TasksState();
 }
 
 class _TasksState extends State<Tasks> {
+  final FirestoreService firestoreService = FirestoreService();
   final List<Task> _registeredTasks = [
-    Task(
-      title: 'Apprendre Flutter',
-      description: 'Suivre le cours pour apprendre de nouvelles compétences',
-      date: DateTime.now(),
-      category: Category.work,
-    ),
-    Task(
-      title: 'Faire les courses',
-      description: 'Acheter des provisions pour la semaine',
-      date: DateTime.now().subtract(const Duration(days: 1)),
-      category: Category.shopping,
-    ),
-    Task(
-      title: 'Rédiger un CR',
-      description: '',
-      date: DateTime.now(),
-      category: Category.personal,
-    ),
   ];
+
+void _addTask(Task task) async {
+  await firestoreService.addTask(task);
+  setState(() {
+    _registeredTasks.add(task);
+  });
+}
+
+
+
+void _openAddTaskOverlay() {
+  showModalBottomSheet(
+    backgroundColor: const Color(0xFFEBD9F0),
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
+    ),
+    context: context,
+    isScrollControlled: true,
+    builder: (ctx) => Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Wrap(
+        children: [
+          NewTask(
+            onAddTask: (task) {
+              _addTask(task); // This adds the task and updates Firestore
+              Navigator.of(ctx).pop();
+            },
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -40,13 +57,9 @@ class _TasksState extends State<Tasks> {
       appBar: AppBar(
         title: const Text(
           'My To Do List',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Color.fromARGB(255, 72, 26, 61),
-          ),
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color.fromARGB(255, 72, 26, 61)),
         ),
-        backgroundColor: const Color(0xFFCAA6D6), // Pastel mauve
+        backgroundColor: const Color(0xFFCAA6D6),
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -55,54 +68,22 @@ class _TasksState extends State<Tasks> {
             padding: EdgeInsets.all(16.0),
             child: Text(
               'Tasks',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF6B466D), // Darker mauve
-              ),
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF6B466D)),
             ),
           ),
           const SizedBox(height: 10),
           Expanded(
-            child: TasksList(tasks: _registeredTasks),
+            child: TasksList(
+              tasks: _registeredTasks,
+             
+            ),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _openAddTaskOverlay,
-        backgroundColor: const Color(0xFFCAA6D6), // Pastel mauve
+        backgroundColor: const Color(0xFFCAA6D6),
         child: const Icon(Icons.add),
-      ),
-    );
-  }
-
-  Future<void> _addTask(Task task) async {
-    await Future.delayed(const Duration(seconds: 2));
-    setState(() {
-      _registeredTasks.add(task);
-    });
-  }
-
-  void _openAddTaskOverlay() {
-    showModalBottomSheet(
-      backgroundColor: const Color(0xFFEBD9F0), // Lighter pastel mauve
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(25.0),
-        ),
-      ),
-      context: context,
-      isScrollControlled: false, // Set to false to prevent full screen height
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: Wrap(
-          // Use Wrap to limit the height to the content
-          children: [
-            NewTask(onAddTask: _addTask),
-          ],
-        ),
       ),
     );
   }
